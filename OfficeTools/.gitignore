@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+*.user
+TestResults/
+# 真實業務檔案（不進版控）
+tests/TestFiles/private/
+*.autosave-*.xlsx
+.DS_Store
