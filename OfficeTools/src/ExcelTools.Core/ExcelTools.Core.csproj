@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="ExcelTools.Core.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="ClosedXML" />
     <PackageReference Include="DocumentFormat.OpenXml" />
   </ItemGroup>

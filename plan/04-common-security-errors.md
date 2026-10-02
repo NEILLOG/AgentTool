@@ -55,6 +55,7 @@ Excel `Save` 覆寫原檔不受 `AllowOverwrite` 控制，但一律備份（見 
 | `UNSAFE_TO_OVERWRITE` | 活頁簿含 ClosedXML 無法保留的內容，請改用 save_as 存成新檔 |
 | `SHEET_NOT_FOUND` | 附上實際存在的工作表名稱 |
 | `INVALID_RANGE` | 說明正確格式，例如 A1:C10 |
+| `INVALID_VALUE` | 儲存格值只能是數字、字串、布林、日期（ISO 字串）或 null；字串最長 32767 字元 |
 
 PDF 頁面無法 OCR 不算錯誤，以頁面標記 `OcrUnavailable` 表示（見 03）。
 

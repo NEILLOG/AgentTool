@@ -64,5 +64,7 @@ public sealed record RangeData(
 - 讀取回傳緊湊的 2D 陣列；可選擇附公式（`IncludeFormulas`）、顯示文字（`UseFormattedText`）。
 - 超過 `MaxCellsPerRead` 就截斷，回傳 `Truncated` 與 `NextRange`。
 - 寫入時 `=` 開頭當公式、ISO 日期字串轉日期，兩者都可關閉；`null` 代表清空。
-- 公式計算失敗時回傳快取值並標記 `CalculationWarnings`，不讓整個操作失敗。
+- 公式計算失敗時回傳快取值並標記 `CalculationWarnings`，不讓整個操作失敗。實測 ClosedXML 0.105 讀取公式時會丟例外的情況：語法錯誤（`ExpressionParseException`）、循環參照（`InvalidOperationException`）、不支援的運算（例如範圍交集，`NotImplementedException`），讀取端要逐格捕捉。
+- **寫入公式要先驗證語法**：實測 `FormulaA1 = "SUM(A1:"` 設定與存檔都不會報錯，壞公式會被寫進檔案、Excel 開啟時要求修復。寫入前先用 `ClosedXML.Parser` 解析，語法錯誤回 `INVALID_VALUE`（附錯誤位置），不寫入。未知函式名稱（`NOSUCHFN(1)`）不會被擋，會得到 `#NAME?`，這是 Excel 本身的行為，不視為錯誤。
+- 以字串寫入時，ISO 日期字串預設轉成日期（可用 `ParseIsoDates` 關閉）；`00123` 這類看起來像數字的字串一律保持文字。
 - `SHEET_NOT_FOUND` 錯誤直接附上現有工作表清單，省一輪重試。

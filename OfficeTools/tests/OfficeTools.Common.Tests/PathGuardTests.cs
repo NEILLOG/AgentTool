@@ -330,7 +330,7 @@ public class OfficeToolExceptionTests
             Assert.Contains($"| `{code}` |", planTable);
         }
 
-        Assert.Equal(14, codes.Count);
+        Assert.Equal(15, codes.Count);
     }
 
     private static string FindPlanFile(string name)
