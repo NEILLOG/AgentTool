@@ -8,9 +8,9 @@ using OfficeTools.Common.Errors;
 namespace ExcelTools.Core.Operations;
 
 /// <summary>儲存格範圍的讀取、寫入、追加與清除。範圍一律是 A1 格式（A1、A1:C10、A:A、1:1）。</summary>
-public sealed class RangeOperations(WorkbookSessionManager sessions, ExcelToolsOptions options)
+public sealed partial class RangeOperations(WorkbookSessionManager sessions, ExcelToolsOptions options)
 {
-    private const int MaxWarnings = 20;
+    internal const int MaxWarnings = 20;
 
     /// <summary>
     /// 讀取範圍。結果限制在工作表有內容的區域內（起點維持你要求的位置，終點縮到最後有內容的列 / 欄）；
@@ -283,7 +283,7 @@ public sealed class RangeOperations(WorkbookSessionManager sessions, ExcelToolsO
         return warnings;
     }
 
-    private static object? ReadCell(IXLCell cell, bool formatted, List<string> warnings, ref int warningCount)
+    internal static object? ReadCell(IXLCell cell, bool formatted, List<string> warnings, ref int warningCount)
     {
         try
         {
@@ -317,7 +317,7 @@ public sealed class RangeOperations(WorkbookSessionManager sessions, ExcelToolsO
         _ => ex.GetType().Name,
     };
 
-    private static void AddOverflowNote(List<string> warnings, int total)
+    internal static void AddOverflowNote(List<string> warnings, int total)
     {
         if (total > warnings.Count)
         {
@@ -325,5 +325,5 @@ public sealed class RangeOperations(WorkbookSessionManager sessions, ExcelToolsO
         }
     }
 
-    private static RangeAddress AsCells(RangeAddress a) => a with { Kind = RangeKind.Cells };
+    internal static RangeAddress AsCells(RangeAddress a) => a with { Kind = RangeKind.Cells };
 }

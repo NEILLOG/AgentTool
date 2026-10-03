@@ -7,7 +7,7 @@
 0. **已完成。** 專案骨架：`git init`、`global.json`、`Directory.Build.props`、`Directory.Packages.props`（固定 ClosedXML 與相容的 `DocumentFormat.OpenXml` 版本）、空 solution 與測試專案，跑通 `dotnet build` / `dotnet test`。
 1. `OfficeTools.Common`：`PathGuard`、錯誤碼、設定。**已完成。**
 2. Excel 底層：`A1Address`（A1 位址解析）、`CellValueConverter`（值轉換），附單元測試。**已完成。**
-3. `WorkbookSessionManager` + File / Sheet / Range 操作（**3a File 與 Session、3b Sheet 已完成**；3c-1 Range 讀寫（ReadRange、WriteRange、AppendRows、ClearRange、公式驗證）已完成，3c-2（插入／刪除列欄、Find、CopyRange）待做）（含資料保全偵測、原子存檔、逾時備份），用 `ConsoleSandbox` 手動試。寫入公式前先驗證語法（見 02）。
+3. `WorkbookSessionManager` + File / Sheet / Range 操作（**3a File 與 Session、3b Sheet 已完成**；3c-1 Range 讀寫（ReadRange、WriteRange、AppendRows、ClearRange、公式驗證）已完成，3c-2 結構操作（InsertRows、DeleteRows、InsertColumns、DeleteColumns，含檢查點復原）、Find、CopyRange 已完成。**第 3 步的 File / Sheet / Range 全部完成**；Format 操作（第 4 步）待做）（含資料保全偵測、原子存檔、逾時備份），用 `ConsoleSandbox` 手動試。寫入公式前先驗證語法（見 02）。
 4. Excel Format 操作、`Find`、`CopyRange`。
 5. Word reader：大綱、分節讀取、Markdown 輸出。
 6. PPT reader：投影片大綱、文字排序、備註、圖表數據。

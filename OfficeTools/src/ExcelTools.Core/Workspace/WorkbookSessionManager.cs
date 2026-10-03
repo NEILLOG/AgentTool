@@ -125,10 +125,7 @@ public sealed class WorkbookSessionManager : IDisposable
 
             if (mutates && session.ReadOnly)
             {
-                throw new OfficeToolException(
-                    ErrorCodes.UnsupportedFormat,
-                    "這個活頁簿是唯讀的（.xlsm 第一版只能讀取）",
-                    "請用 save_as 另存為 .xlsx 後再編輯；巨集不會保留");
+                throw ReadOnlyError();
             }
 
             session.LastAccess = _time.GetUtcNow();
@@ -166,6 +163,12 @@ public sealed class WorkbookSessionManager : IDisposable
         _sessions.TryRemove(session.Id, out _);
         session.Workbook.Dispose();
     }
+
+    internal static OfficeToolException ReadOnlyError() =>
+        new(
+            ErrorCodes.UnsupportedFormat,
+            "這個活頁簿是唯讀的（.xlsm 第一版只能讀取）",
+            "請用 save_as 另存為 .xlsx 後再編輯；巨集不會保留");
 
     private WorkbookSession Find(string workbookId)
     {

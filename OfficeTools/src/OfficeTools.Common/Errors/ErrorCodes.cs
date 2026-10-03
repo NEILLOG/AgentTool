@@ -18,4 +18,5 @@ public static class ErrorCodes
     public const string SheetNotFound = "SHEET_NOT_FOUND";
     public const string InvalidRange = "INVALID_RANGE";
     public const string InvalidValue = "INVALID_VALUE";
+    public const string UnsafeOperation = "UNSAFE_OPERATION";
 }

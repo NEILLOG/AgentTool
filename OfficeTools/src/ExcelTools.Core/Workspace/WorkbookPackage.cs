@@ -1,6 +1,9 @@
 using System.IO.Compression;
 using System.Text.RegularExpressions;
 using ClosedXML.Excel;
+using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Validation;
 using OfficeTools.Common;
 using OfficeTools.Common.Errors;
 
@@ -160,6 +163,39 @@ internal static partial class WorkbookPackage
                 File.Delete(temp);
             }
         }
+    }
+
+    /// <summary>
+    /// 把活頁簿序列化成 xlsx 內容，不經過磁碟。呼叫後這個 ClosedXML 實例就「用掉了」（SaveAs(Stream) 會保留該串流，
+    /// 再存一次會失敗），呼叫端必須用 <see cref="WorkbookSession.ReloadFrom"/> 換新（原因見 <see cref="WriteAtomically"/>）。
+    /// </summary>
+    public static byte[] Serialize(IXLWorkbook workbook)
+    {
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        return stream.ToArray();
+    }
+
+    /// <summary>用 Open XML SDK 驗證指定工作表（含它的表格部件）與活頁簿部件，回傳錯誤描述；空 = 合法。</summary>
+    public static IReadOnlyList<string> ValidateSheet(byte[] xlsx, string sheetName)
+    {
+        using var doc = SpreadsheetDocument.Open(new MemoryStream(xlsx, writable: false), isEditable: false);
+        var workbookPart = doc.WorkbookPart!;
+        var validator = new OpenXmlValidator(FileFormatVersions.Office2019);
+        var errors = validator.Validate(workbookPart).Select(e => $"{e.Path?.XPath}: {e.Description}").ToList();
+
+        var sheet = workbookPart.Workbook?.Sheets?.Elements<DocumentFormat.OpenXml.Spreadsheet.Sheet>()
+            .FirstOrDefault(s => string.Equals(s.Name?.Value, sheetName, StringComparison.OrdinalIgnoreCase));
+        if (sheet?.Id?.Value is { } relationshipId && workbookPart.GetPartById(relationshipId) is WorksheetPart part)
+        {
+            errors.AddRange(validator.Validate(part).Select(e => $"{e.Path?.XPath}: {e.Description}"));
+            foreach (var table in part.TableDefinitionParts)
+            {
+                errors.AddRange(validator.Validate(table).Select(e => $"{e.Path?.XPath}: {e.Description}"));
+            }
+        }
+
+        return errors;
     }
 
     private static bool HasDrawingShapes(ZipArchive zip)
