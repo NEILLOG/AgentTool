@@ -6,15 +6,13 @@ using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Validation;
 using OfficeTools.Common;
 using OfficeTools.Common.Errors;
+using OfficeTools.Common.Security;
 
 namespace ExcelTools.Core.Workspace;
 
 /// <summary>xlsx 檔案層級的工作：共享讀取、結構檢查（含 ClosedXML 無法保留的內容）、載入、原子寫入。</summary>
 internal static partial class WorkbookPackage
 {
-    private static readonly byte[] OleSignature = [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
-    private static readonly byte[] ZipSignature = [0x50, 0x4B, 0x03, 0x04];
-
     // 檔名前綴 → 存檔後會遺失的內容
     private static readonly (string Prefix, string Label)[] LossyParts =
     [
@@ -32,77 +30,36 @@ internal static partial class WorkbookPackage
         ("xl/threadedComments/", "討論串註解"),
     ];
 
-    /// <summary>讀進記憶體後立即放開檔案，使用者可繼續在 Excel 中開啟與編輯。</summary>
-    public static byte[] ReadShared(string fullPath)
-    {
-        try
-        {
-            using var fs = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-            using var ms = new MemoryStream();
-            fs.CopyTo(ms);
-            return ms.ToArray();
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            throw Locked(fullPath, ex);
-        }
-    }
+    public static byte[] ReadShared(string fullPath) => PackageChecks.ReadShared(fullPath);
 
     /// <summary>驗證結構與大小，回傳存檔時會遺失的內容清單。</summary>
     public static IReadOnlyList<string> Inspect(byte[] bytes, OfficeToolsOptions options)
     {
-        if (bytes.AsSpan().StartsWith(OleSignature))
-        {
-            throw new OfficeToolException(
-                ErrorCodes.PasswordProtected,
-                "檔案有密碼保護，或是舊版 .xls 格式",
-                "請使用者先在 Excel 移除密碼，或另存為 .xlsx 後再處理");
-        }
+        var names = PackageChecks.ValidateZip(bytes, options, "[Content_Types].xml", "xl/workbook.xml");
 
-        if (!bytes.AsSpan().StartsWith(ZipSignature))
+        var warnings = new List<string>();
+        foreach (var (prefix, label) in LossyParts)
         {
-            throw Corrupt("檔案不是有效的 xlsx（不是 zip 封裝）", null);
+            if (names.Any(n => n.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) && !warnings.Contains(label))
+            {
+                warnings.Add(label);
+            }
         }
 
         try
         {
             using var zip = new ZipArchive(new MemoryStream(bytes, writable: false), ZipArchiveMode.Read);
-
-            var total = zip.Entries.Sum(e => e.Length);
-            if (total > options.MaxUncompressedMb * 1024L * 1024)
-            {
-                throw new OfficeToolException(
-                    ErrorCodes.FileTooLarge,
-                    $"檔案解壓縮後約 {total / (1024 * 1024)} MB，超過上限 {options.MaxUncompressedMb} MB",
-                    "請先將檔案分割或縮小後再處理");
-            }
-
-            var names = zip.Entries.Select(e => e.FullName).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            if (!names.Contains("[Content_Types].xml") || !names.Contains("xl/workbook.xml"))
-            {
-                throw Corrupt("檔案缺少活頁簿的必要部件，不是有效的 xlsx", null);
-            }
-
-            var warnings = new List<string>();
-            foreach (var (prefix, label) in LossyParts)
-            {
-                if (names.Any(n => n.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) && !warnings.Contains(label))
-                {
-                    warnings.Add(label);
-                }
-            }
-
             if (HasDrawingShapes(zip))
             {
                 warnings.Add("圖形 / 文字方塊");
             }
-
-            return warnings;
         }
         catch (InvalidDataException ex)
         {
-            throw Corrupt("檔案結構損壞，無法讀取", ex);
+            throw PackageChecks.Corrupt("檔案結構損壞，無法讀取", ex);
         }
+
+        return warnings;
     }
 
     public static XLWorkbook Load(byte[] bytes)
