@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Windows.Media.Ocr 只有 Windows 10 以上有；在 Mac 上只編譯、不執行（里程碑 3 在 Windows 實測） -->
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DocumentReader.Core\DocumentReader.Core.csproj" />
+  </ItemGroup>
+
+</Project>

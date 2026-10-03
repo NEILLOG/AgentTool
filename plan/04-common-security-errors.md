@@ -60,7 +60,7 @@ Excel `Save` 覆寫原檔不受 `AllowOverwrite` 控制，但一律備份（見 
 | `INVALID_VALUE` | 儲存格值只能是數字、字串、布林、日期（ISO 字串）或 null；字串最長 32767 字元；讀取的 offset、maxChars、投影片範圍超出範圍 |
 | `UNSAFE_OPERATION` | 這個操作會讓檔案損壞（ClosedXML 的限制），已自動復原，活頁簿沒有變更；請改用其他方式或先調整表格 / 資料驗證 |
 
-PDF 頁面無法 OCR 不算錯誤，以頁面標記 `OcrUnavailable` 表示（見 03）。
+PDF 頁面無法 OCR（沒有引擎、語言套件未安裝、辨識失敗）不算錯誤，以該頁的標記與 `Notes` 表示，讀取照常成功（見 03）。
 
 ## 接進 agent（里程碑 2，介面待使用者確認）
 

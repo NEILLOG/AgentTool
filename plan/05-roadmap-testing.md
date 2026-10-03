@@ -11,7 +11,7 @@
 4. Excel Format 操作（`FormatRange`、`SetColumnWidth`、`AutoFitColumns`、`Merge`、`Unmerge`、`FreezePanes`）、`Find`、`CopyRange`。**已完成**（`Find`、`CopyRange` 在 3c-2 完成）。
 5. Word reader：大綱、分節讀取、Markdown 輸出。**已完成**（見 03）。
 6. PPT reader：投影片大綱、文字排序、備註、圖表數據。**已完成**（見 03；用使用者提供的真實 sample.pptx 驗證過）。
-7. PDF reader：**先做 spike 確認 PDFtoImage 在 osx-arm64 可用**；再做 PdfPig 抽取、品質判斷、頁面轉圖片；Windows OCR 實作（Mac 上只 build）。
+7. PDF reader：**已完成**（見 03）。PDFtoImage 在 osx-arm64 實測可用（約 0.1–0.5 秒一頁）；PdfPig 文字抽取 + 依框線建表格 + XY-cut 閱讀順序 + 品質判斷 + 頁面轉圖片；`IOcrEngine` 與 Windows 實作（`DocumentReader.Ocr.Windows`，Mac 上只編譯）。
 
 ## 里程碑 2：Agent 介接（待使用者確認 ITool 介面後才開始）
 
@@ -22,6 +22,11 @@
 ## 里程碑 3：Windows 驗證
 
 - Windows OCR 實測、接進 WPF agent 整合測試、golden file 用 Excel 實際開啟。
+- **PDF / OCR（Mac 上無法驗證）**：
+  - [ ] `WindowsOcrEngine` 在裝了繁體中文語言套件的機器上辨識掃描頁；沒裝時 `IsAvailable` 回 false 並顯示安裝提示。
+  - [ ] 200 dpi 的 A4 頁面不超過 `OcrEngine.MaxImageDimension`（超過時要降 dpi）。
+  - [ ] Windows 上 PDFtoImage（`bblanchon.PDFium.Win32`）能轉圖，打包後原生檔有被帶上。
+  - [ ] 中日文之間的空格清理（`CleanLine`）對真實辨識結果合理。
 - **Excel 存檔相關（Mac 上無法驗證）**：
   - [ ] ClosedXML `SaveAs(path)` 之後暫存檔沒有被持有，`File.ReadAllBytes` 與 `File.Replace` 能成功。
   - [ ] 使用者在 Excel 開著同一個檔案時，`Open` 仍可讀；`Save` 在 `File.Replace` 失敗時回 `FILE_LOCKED` 且原檔不受影響。
@@ -51,6 +56,8 @@
 
 ## PDF 驗證（決定要不要追加 Python）
 
+- [x] 用使用者提供的三份真實 PDF 驗證：Notion 風格行程表（3 頁，表格、連結、康熙部首字元）、含框線表格的報價單（跨欄標題、合併儲存格）、設計稿式複雜排版（標註框、小字清單）。表格與清單輸出正確；複雜排版只能做到各區塊內容完整，區塊間順序是近似。
+- [ ] 這三份都有文字層：**掃描檔與亂碼檔只用程式產生的 PDF（整頁圖片）測過**，請再給一份真實掃描檔，並在 Windows 上實測 OCR。
 - [ ] 收集 10 到 20 份實際會處理的 PDF，包含掃描檔與表格密集的報表。
 - [ ] 讓 agent 讀完後回答內容問題，記錄正確率。
 - [ ] 表格頁若普遍答錯，先試「轉圖片給多模態模型」，仍不夠再評估 Docling MCP server。

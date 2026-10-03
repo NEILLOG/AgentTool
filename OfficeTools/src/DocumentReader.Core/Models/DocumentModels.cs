@@ -41,3 +41,19 @@ public sealed record SlideOutline(int Number, string Title, int Chars, bool Hidd
 
 /// <param name="Notes">轉換時略過或簡化的內容說明（圖片數量、SmartArt 等）。</param>
 public sealed record PresentationOutline(string Path, int SlideCount, int TotalChars, IReadOnlyList<SlideOutline> Slides, IReadOnlyList<string> Notes);
+
+/// <summary>PDF 讀取選項。</summary>
+/// <param name="UseOcr">需要 OCR 的頁面（掃描檔、亂碼頁）在有可用的 OCR 引擎時自動辨識；關閉則只標記。</param>
+public sealed record PdfReadOptions(bool UseOcr = true);
+
+/// <param name="Chars">文字層抽出的字元數（OCR 結果不計）。</param>
+/// <param name="NeedsOcr">文字層不可用（沒有文字的掃描頁，或亂碼比例高）。</param>
+/// <param name="Tables">用框線偵測到的表格數。</param>
+public sealed record PdfPageOutline(int Number, int Chars, int Images, int Tables, bool NeedsOcr, string? Reason);
+
+public sealed record PdfBookmark(string Title, int Level, int? Page);
+
+public sealed record PdfOutline(string Path, int PageCount, int TotalChars, IReadOnlyList<PdfPageOutline> Pages, IReadOnlyList<PdfBookmark> Bookmarks, bool OcrAvailable, IReadOnlyList<string> Notes);
+
+/// <param name="Png">PNG 圖片內容。</param>
+public sealed record RenderedPage(int Page, int Width, int Height, byte[] Png);
