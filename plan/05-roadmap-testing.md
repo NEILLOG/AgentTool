@@ -7,7 +7,7 @@
 0. **已完成。** 專案骨架：`git init`、`global.json`、`Directory.Build.props`、`Directory.Packages.props`（固定 ClosedXML 與相容的 `DocumentFormat.OpenXml` 版本）、空 solution 與測試專案，跑通 `dotnet build` / `dotnet test`。
 1. `OfficeTools.Common`：`PathGuard`、錯誤碼、設定。**已完成。**
 2. Excel 底層：`A1Address`（A1 位址解析）、`CellValueConverter`（值轉換），附單元測試。**已完成。**
-3. `WorkbookSessionManager` + File / Sheet / Range 操作（**3a File 與 Session 已完成**；3b Sheet、3c Range 待做）（含資料保全偵測、原子存檔、逾時備份），用 `ConsoleSandbox` 手動試。寫入公式前先驗證語法（見 02）。
+3. `WorkbookSessionManager` + File / Sheet / Range 操作（**3a File 與 Session、3b Sheet 已完成**；3c Range 待做）（含資料保全偵測、原子存檔、逾時備份），用 `ConsoleSandbox` 手動試。寫入公式前先驗證語法（見 02）。
 4. Excel Format 操作、`Find`、`CopyRange`。
 5. Word reader：大綱、分節讀取、Markdown 輸出。
 6. PPT reader：投影片大綱、文字排序、備註、圖表數據。
@@ -35,7 +35,7 @@
 - 值轉換來回一致；截斷與 `NextRange` 正確；鎖檔情境；路徑穿越、symlink、UNC、ADS 被擋。
 - 資料保全：含圖表 / 樞紐 / VBA 的檔案 `Save` 回 `UNSAFE_TO_OVERWRITE`；存檔中斷不會破壞原檔。
 - 逾時備份：有未存變更的 session 逾時後產生備份、之後呼叫回 `SESSION_EXPIRED` 並附路徑；備份失敗時 session 保留（逾時用可注入的時鐘測試）。
-- 輸出的 xlsx 用 `OpenXmlValidator` 自動驗證（Mac 可跑）；里程碑 3 再用 Excel 實際開一次，確認沒有「需要修復」的警告。
+- 輸出的 xlsx 用 `OpenXmlValidator`（Office2019）自動驗證（Mac 可跑，已用於建立與工作表操作；附負面對照確認驗證器真的會報錯）；里程碑 3 再用 Excel 實際開一次，確認沒有「需要修復」的警告。
 
 ## PDF 驗證（決定要不要追加 Python）
 

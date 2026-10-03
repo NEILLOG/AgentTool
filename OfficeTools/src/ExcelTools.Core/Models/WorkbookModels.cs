@@ -31,3 +31,23 @@ public sealed record OpenWorkbookEntry(
 public sealed record FileEntry(string Name, string Path, long SizeBytes, DateTimeOffset LastModifiedUtc);
 
 public sealed record FileListing(string Directory, IReadOnlyList<FileEntry> Files, bool Truncated);
+
+/// <param name="Visibility">Visible、Hidden 或 VeryHidden。</param>
+/// <param name="MergedRanges">合併儲存格範圍，最多列出 <c>SheetOperations.MaxMergedRangesListed</c> 個。</param>
+/// <param name="FrozenRows">凍結的列數（0 = 沒有凍結）。</param>
+/// <param name="FrozenColumns">凍結的欄數（0 = 沒有凍結）。</param>
+public sealed record SheetInfo(
+    string Name,
+    int Index,
+    string Visibility,
+    string? UsedRange,
+    IReadOnlyList<string> MergedRanges,
+    int MergedRangeCount,
+    int FrozenRows,
+    int FrozenColumns,
+    IReadOnlyList<string> TableNames,
+    bool HasAutoFilter);
+
+/// <param name="Sheets">操作後的工作表清單（依分頁順序）。</param>
+/// <param name="Warnings">需要使用者或 agent 留意的後果，例如刪除後有公式失效。</param>
+public sealed record SheetChangeResult(IReadOnlyList<SheetSummary> Sheets, IReadOnlyList<string> Warnings);

@@ -29,6 +29,7 @@ internal static class SheetNameRules
 
     public static IReadOnlyList<SheetSummary> Summarize(IXLWorkbook workbook) =>
         workbook.Worksheets
+            .OrderBy(ws => ws.Position) // Worksheets 的列舉順序是建立順序，Position 才是分頁順序
             .Select(ws => new SheetSummary(
                 ws.Position,
                 ws.Name,

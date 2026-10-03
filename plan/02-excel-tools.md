@@ -52,6 +52,16 @@ ClosedXML 載入既有檔案後再存檔，會遺失或損壞它不支援的內�
 | Range | `ReadRange`、`WriteRange`、`AppendRows`、`ClearRange`、`InsertRows`、`DeleteRows`、`InsertColumns`、`DeleteColumns`、`Find`、`CopyRange` |
 | Format | `FormatRange`、`SetColumnWidth`、`AutoFitColumns`、`Merge`、`Unmerge`、`FreezePanes` |
 
+## 工作表操作的行為（實測 ClosedXML 0.105.1）
+
+- 工作表一律以名稱指定，**不分大小寫**（與 Excel 一致）；位置是 1 起算的分頁順序。找不到回 `SHEET_NOT_FOUND`，hint 列出現有工作表（依分頁順序）。
+- `wb.Worksheets` 的列舉順序是**建立順序**，不是分頁順序，要用 `Position` 排序；所有清單輸出都已排序。
+- **改名**：ClosedXML 會同步更新其他工作表公式與已定義名稱裡的參照（含需要加引號的名稱）。名稱重複（不分大小寫）、不合法（空白、超過 31 字元、含 `\ / ? * [ ] :`、以單引號開頭或結尾）回 `INVALID_VALUE`；只改大小寫視為合法。
+- **刪除**：ClosedXML **不會**處理其他地方對該工作表的參照，Excel 開啟後會變 `#REF!`。因此刪除前掃描公式與已定義名稱，結果以 `SheetChangeResult.Warnings` 回報（列出最多 10 處與總數）。另外 ClosedXML 允許刪到 0 張或只剩隱藏表（Excel 會要求修復），所以自行擋下：至少保留一張工作表，且至少一張可見。
+- **複製**：預設命名為「原名 (2)」「原名 (3)」…（超過 31 字元時截斷原名），預設位置緊接在來源之後（與 Excel 一致）。
+- 修改類操作都回傳操作後的工作表清單，讓 agent 不必再查一次。
+- `GetSheetInfo` 的已使用範圍以「有內容」為準，空的合併儲存格不算。
+
 ## 資料表示
 
 ```csharp

@@ -1,5 +1,7 @@
 using System.IO.Compression;
 using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Validation;
 using ExcelTools.Core.Operations;
 using ExcelTools.Core.Workspace;
 using OfficeTools.Common;
@@ -37,6 +39,7 @@ internal sealed class ExcelEnv : IDisposable
         Guard = new PathGuard(Options, Time);
         Sessions = new WorkbookSessionManager(Guard, new ExcelToolsOptions { IdleTimeout = idleTimeout ?? TimeSpan.FromMinutes(30) }, Time);
         Files = new FileOperations(Guard, Options, Sessions);
+        Sheets = new SheetOperations(Sessions);
     }
 
     public string Root { get; }
@@ -50,6 +53,8 @@ internal sealed class ExcelEnv : IDisposable
     public WorkbookSessionManager Sessions { get; }
 
     public FileOperations Files { get; }
+
+    public SheetOperations Sheets { get; }
 
     public string Path(string relative) => System.IO.Path.Combine(Root, relative);
 
@@ -86,6 +91,17 @@ internal sealed class ExcelEnv : IDisposable
         return path;
     }
 
+    /// <summary>在 root 內建立多工作表的 xlsx，內容完全由 <paramref name="build"/> 決定。</summary>
+    public string MakeBook(string relative, Action<XLWorkbook> build)
+    {
+        var path = Path(relative);
+        Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path)!);
+        using var wb = new XLWorkbook();
+        build(wb);
+        wb.SaveAs(path);
+        return path;
+    }
+
     /// <summary>在既有的 xlsx（zip）裡加入額外部件，用來模擬含圖表、樞紐、巨集等內容的檔案。</summary>
     public static void AddEntries(string path, params (string Name, string Content)[] entries)
     {
@@ -104,6 +120,16 @@ internal sealed class ExcelEnv : IDisposable
         Sessions.Use(workbookId, true, s => Internal.CellValueConverter.Apply(
             s.Workbook.Worksheet(sheet).Cell(address),
             Internal.CellValueConverter.ToCellInput(value, new Internal.CellWriteOptions())));
+
+    /// <summary>用 Open XML SDK 驗證檔案符合 Office 2019 的 schema；有錯誤時回傳描述（空 = 合法）。</summary>
+    public static IReadOnlyList<string> ValidateXlsx(string path)
+    {
+        using var doc = SpreadsheetDocument.Open(path, isEditable: false);
+        return new OpenXmlValidator(DocumentFormat.OpenXml.FileFormatVersions.Office2019)
+            .Validate(doc)
+            .Select(e => $"{e.Path?.XPath}: {e.Description}")
+            .ToList();
+    }
 
     public static object? ReadFromDisk(string path, string address, int sheet = 1)
     {

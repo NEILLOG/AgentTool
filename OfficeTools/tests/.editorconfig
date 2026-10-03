@@ -1,3 +1,6 @@
 [*.cs]
 # 測試方法允許用底線命名（例如 Method_Scenario_Expected）
 dotnet_diagnostic.CA1707.severity = none
+# 測試碼不在意微幅的效能建議：重複的常數陣列、回傳型別的具體化
+dotnet_diagnostic.CA1861.severity = none
+dotnet_diagnostic.CA1859.severity = none
