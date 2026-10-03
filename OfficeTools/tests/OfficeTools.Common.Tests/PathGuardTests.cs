@@ -350,3 +350,36 @@ public class OfficeToolExceptionTests
         throw new FileNotFoundException($"找不到 plan/{name}");
     }
 }
+
+public sealed class PathGuardBackupFailureTests : IDisposable
+{
+    private readonly TempDirectory _tmp = new();
+
+    public void Dispose()
+    {
+        if (!OperatingSystem.IsWindows() && Directory.Exists(_tmp.Combine("root")))
+        {
+            File.SetUnixFileMode(_tmp.Combine("root"), UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+
+        _tmp.Dispose();
+    }
+
+    [Fact]
+    public void CreateBackup_failure_is_reported_as_an_OfficeToolException()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var file = _tmp.CreateFile("root/book.xlsx");
+        var guard = new PathGuard(new OfficeToolsOptions { AllowedRoots = [_tmp.Combine("root")] });
+        File.SetUnixFileMode(_tmp.Combine("root"), UnixFileMode.UserRead | UnixFileMode.UserExecute);
+
+        var ex = Assert.Throws<OfficeToolException>(() => guard.CreateBackup(file));
+
+        Assert.Equal(ErrorCodes.FileLocked, ex.Code);
+        Assert.Contains("已中止", ex.Hint);
+    }
+}

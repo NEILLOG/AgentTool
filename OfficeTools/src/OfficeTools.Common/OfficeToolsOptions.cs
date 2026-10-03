@@ -10,6 +10,9 @@ public sealed class OfficeToolsOptions
 
     public int MaxFileSizeMb { get; init; } = 50;
 
+    /// <summary>xlsx / docx / pptx 解壓縮後各部件大小總和的上限，防範解壓縮炸彈。</summary>
+    public int MaxUncompressedMb { get; init; } = 500;
+
     /// <summary>單一 XML 部件解壓後的字元上限（套給 Open XML SDK 的 OpenSettings.MaxCharactersInPart）。</summary>
     public long MaxCharactersInPart { get; init; } = 50_000_000;
 

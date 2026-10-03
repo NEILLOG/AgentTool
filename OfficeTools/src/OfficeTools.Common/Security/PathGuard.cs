@@ -104,7 +104,19 @@ public sealed class PathGuard
             backup = Path.Combine(dir, $"{stem}.backup-{stamp}-{i}{ext}");
         }
 
-        File.Copy(fullPath, backup);
+        try
+        {
+            File.Copy(fullPath, backup);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw new OfficeToolException(
+                ErrorCodes.FileLocked,
+                $"無法建立備份檔：{backup}",
+                "請確認資料夾有寫入權限且空間足夠；為了不遺失原檔，這次操作已中止",
+                ex);
+        }
+
         return backup;
     }
 

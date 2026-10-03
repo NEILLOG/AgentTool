@@ -7,7 +7,7 @@
 0. **已完成。** 專案骨架：`git init`、`global.json`、`Directory.Build.props`、`Directory.Packages.props`（固定 ClosedXML 與相容的 `DocumentFormat.OpenXml` 版本）、空 solution 與測試專案，跑通 `dotnet build` / `dotnet test`。
 1. `OfficeTools.Common`：`PathGuard`、錯誤碼、設定。**已完成。**
 2. Excel 底層：`A1Address`（A1 位址解析）、`CellValueConverter`（值轉換），附單元測試。**已完成。**
-3. `WorkbookSessionManager` + File / Sheet / Range 操作（含資料保全偵測、原子存檔、逾時備份），用 `ConsoleSandbox` 手動試。寫入公式前先驗證語法（見 02）。
+3. `WorkbookSessionManager` + File / Sheet / Range 操作（**3a File 與 Session 已完成**；3b Sheet、3c Range 待做）（含資料保全偵測、原子存檔、逾時備份），用 `ConsoleSandbox` 手動試。寫入公式前先驗證語法（見 02）。
 4. Excel Format 操作、`Find`、`CopyRange`。
 5. Word reader：大綱、分節讀取、Markdown 輸出。
 6. PPT reader：投影片大綱、文字排序、備註、圖表數據。
@@ -22,6 +22,10 @@
 ## 里程碑 3：Windows 驗證
 
 - Windows OCR 實測、接進 WPF agent 整合測試、golden file 用 Excel 實際開啟。
+- **Excel 存檔相關（Mac 上無法驗證）**：
+  - [ ] ClosedXML `SaveAs(path)` 之後暫存檔沒有被持有，`File.ReadAllBytes` 與 `File.Replace` 能成功。
+  - [ ] 使用者在 Excel 開著同一個檔案時，`Open` 仍可讀；`Save` 在 `File.Replace` 失敗時回 `FILE_LOCKED` 且原檔不受影響。
+  - [ ] `FileShare` 與 symlink 相關測試（目前在沒有權限建立 symlink 時會直接略過）。
 
 ## 測試重點
 

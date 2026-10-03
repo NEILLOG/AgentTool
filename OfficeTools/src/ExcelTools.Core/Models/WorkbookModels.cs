@@ -1,0 +1,33 @@
+namespace ExcelTools.Core.Models;
+
+public sealed record SheetSummary(int Index, string Name, string? UsedRange, bool Hidden);
+
+/// <param name="WorkbookId">後續操作都帶這個 ID。</param>
+/// <param name="ReadOnly">.xlsm 只能讀取；寫入與 Save 會被拒絕。</param>
+/// <param name="AlreadyOpen">這個路徑先前已開啟，回傳的是既有 session。</param>
+/// <param name="PreservationWarnings">ClosedXML 存檔時無法保留的內容；非空時 Save 會被拒絕，只能 SaveAs。</param>
+public sealed record WorkbookInfo(
+    string WorkbookId,
+    string Path,
+    bool ReadOnly,
+    bool IsDirty,
+    bool AlreadyOpen,
+    IReadOnlyList<SheetSummary> Sheets,
+    IReadOnlyList<string> PreservationWarnings);
+
+/// <param name="BackupPath">覆寫前建立的備份；沒有覆寫既有檔案時為 null。</param>
+/// <param name="PreservationWarnings">SaveAs 時，原檔中新檔不會包含的內容。</param>
+public sealed record SaveResult(string Path, string? BackupPath, IReadOnlyList<string> PreservationWarnings);
+
+/// <param name="ExpiryBackupFailed">閒置逾時時備份失敗，session 仍保留在記憶體中，請盡快存檔。</param>
+public sealed record OpenWorkbookEntry(
+    string WorkbookId,
+    string Path,
+    bool IsDirty,
+    bool ReadOnly,
+    DateTimeOffset LastAccessUtc,
+    bool ExpiryBackupFailed);
+
+public sealed record FileEntry(string Name, string Path, long SizeBytes, DateTimeOffset LastModifiedUtc);
+
+public sealed record FileListing(string Directory, IReadOnlyList<FileEntry> Files, bool Truncated);

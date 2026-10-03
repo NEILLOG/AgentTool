@@ -29,6 +29,7 @@ ClosedXML 載入既有檔案後再存檔，會遺失或損壞它不支援的內�
 - 每個 session 一把 `SemaphoreSlim`，因為 ClosedXML 不是執行緒安全的。
 - 記錄是否有未存檔變更；`Close` 時有變更就回 `UNSAVED_CHANGES`，除非帶 `discardChanges`。
 - 同一路徑重複開啟回傳既有 ID。
+- **閒置從操作結束算起**：長時間的操作不算閒置。沒有背景計時器，每次存取時順便清理（主程式也可定期呼叫 `SweepExpired`）。
 - **閒置逾時**：沒有未存變更的 session 逾時直接釋放。有未存變更的 session **先存備份再釋放**：
   - 備份存在原檔同資料夾，檔名 `原檔名.autosave-yyyyMMdd-HHmmss.xlsx`（仍受 `PathGuard` 約束；不覆寫原檔，所以不受資料保全限制）。
   - 釋放後保留一筆「已逾時」紀錄（workbookId → 備份路徑）。之後用該 ID 呼叫時回 `SESSION_EXPIRED`，hint 附上備份路徑，請 agent 告知使用者並用 `Open` 開備份接續。
@@ -36,9 +37,11 @@ ClosedXML 載入既有檔案後再存檔，會遺失或損壞它不支援的內�
 
 ## 存檔語意
 
-- `Save`：只用於由 `Open` 開啟的既有檔案，視為允許覆寫原檔，**一律先備份**（不受 `AllowOverwrite` 控制）。
+- `Save`：只用於由 `Open` 開啟的既有檔案，視為允許覆寫原檔，**每個 session 第一次 Save 前備份原檔**（`原檔名.backup-時間戳.xlsx`，不受 `AllowOverwrite` 控制）；同一 session 之後的 Save 不再重複備份，避免產生一堆備份檔。備份失敗（唯讀資料夾、空間不足）時中止存檔並回 `FILE_LOCKED`，原檔不動。
 - `Create` / `SaveAs` 目的地已存在：依 `AllowOverwrite` 決定，預設回 `FILE_EXISTS`；允許時依 `BackupOnOverwrite` 先備份。
-- **原子寫入**：先存到同資料夾的暫存檔，再用 `File.Replace`（或 `File.Move` 覆寫）換掉目標檔，避免寫到一半造成壞檔。目標被鎖時回 `FILE_LOCKED`。
+- **原子寫入**：先存到同資料夾的暫存檔（`.名稱.guid.tmp.xlsx`），再用 `File.Replace`（目標不存在則 `File.Move`）換掉目標檔，避免寫到一半造成壞檔。目標被鎖時回 `FILE_LOCKED`。
+- **ClosedXML 每個活頁簿實例只能存一次**（實測 0.105.1）：它會記住上一次存檔的串流或檔案，第二次存檔時重新開啟，目標已釋放或被換名就丟 `ObjectDisposedException` / `FileNotFoundException`。因此每次存檔成功後，用剛寫出的內容重新載入一個乾淨的活頁簿取代 session 內的實例（`WorkbookSession.ReloadFrom`）。副作用：每次存檔多一次解析，檔案大時稍慢。
+- 存檔一律用 `SaveAs(string path)`，不用 `SaveAs(Stream)`；路徑的副檔名必須是 .xlsx（ClosedXML 會檢查，所以暫存檔名以 .xlsx 結尾）。
 
 ## 操作清單（第一版）
 

@@ -9,6 +9,7 @@ public sealed class OfficeToolsOptions
 {
     public IReadOnlyList<string> AllowedRoots { get; init; } = [];   // 空 = 全部拒絕
     public int MaxFileSizeMb { get; init; } = 50;
+    public int MaxUncompressedMb { get; init; } = 500;               // 解壓縮後各部件大小總和上限（防解壓縮炸彈）
     public long MaxCharactersInPart { get; init; } = 50_000_000;     // 單一 XML 部件解壓後上限
     public bool AllowOverwrite { get; init; } = false;               // 只管 Create / SaveAs 撞到既有檔
     public bool BackupOnOverwrite { get; init; } = true;
@@ -44,7 +45,7 @@ Excel `Save` 覆寫原檔不受 `AllowOverwrite` 控制，但一律備份（見 
 | `FILE_NOT_FOUND` | 確認路徑，或先用 list_files 查看 |
 | `FILE_TOO_LARGE` | 說明上限；建議分割檔案 |
 | `FILE_EXISTS` | 改用其他檔名，或明確要求覆寫 |
-| `FILE_LOCKED` | 檔案在 Office 中開啟，請關閉或改用 save_as |
+| `FILE_LOCKED` | 檔案在 Office 中開啟，請關閉或改用 save_as（無權限、無法建立備份時也用這個碼） |
 | `PATH_NOT_ALLOWED` | 列出允許的根目錄 |
 | `UNSUPPORTED_FORMAT` | .xls / .doc / .ppt 請先另存為新格式；.xlsm 第一版只能讀 |
 | `PASSWORD_PROTECTED` | 檔案有密碼保護，請使用者先移除密碼 |
