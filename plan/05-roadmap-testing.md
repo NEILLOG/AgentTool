@@ -10,7 +10,7 @@
 3. `WorkbookSessionManager` + File / Sheet / Range 操作（**3a File 與 Session、3b Sheet 已完成**；3c-1 Range 讀寫（ReadRange、WriteRange、AppendRows、ClearRange、公式驗證）已完成，3c-2 結構操作（InsertRows、DeleteRows、InsertColumns、DeleteColumns，含檢查點復原）、Find、CopyRange 已完成。**第 3 步的 File / Sheet / Range 全部完成**）（含資料保全偵測、原子存檔、逾時備份），用 `ConsoleSandbox` 手動試。寫入公式前先驗證語法（見 02）。
 4. Excel Format 操作（`FormatRange`、`SetColumnWidth`、`AutoFitColumns`、`Merge`、`Unmerge`、`FreezePanes`）、`Find`、`CopyRange`。**已完成**（`Find`、`CopyRange` 在 3c-2 完成）。
 5. Word reader：大綱、分節讀取、Markdown 輸出。**已完成**（見 03）。
-6. PPT reader：投影片大綱、文字排序、備註、圖表數據。
+6. PPT reader：投影片大綱、文字排序、備註、圖表數據。**已完成**（見 03；用使用者提供的真實 sample.pptx 驗證過）。
 7. PDF reader：**先做 spike 確認 PDFtoImage 在 osx-arm64 可用**；再做 PdfPig 抽取、品質判斷、頁面轉圖片；Windows OCR 實作（Mac 上只 build）。
 
 ## 里程碑 2：Agent 介接（待使用者確認 ITool 介面後才開始）
@@ -39,8 +39,15 @@
 
 ## Word 真實文件驗證
 
-- [ ] 收集 5 到 10 份實際會處理的 Word 文件（含中文、多層編號標題、表格、追蹤修訂、文字方塊、目錄），確認標題樹、章節範圍、表格與清單輸出合理。目前的測試只用程式產生的 docx，真正由 Word 產出的檔案可能有我沒想到的結構。
+- [x] 用使用者提供的一份真實 Word 檔（36 頁中文會訊，多層標題、超連結、表格、圖片）驗證：標題樹、章節內容、連結輸出合理。
+- [ ] 再收集 5 到 10 份實際會處理的 Word 文件（含多層編號標題、追蹤修訂、文字方塊、目錄），確認標題樹、章節範圍、表格與清單輸出合理。其餘功能目前只用程式產生的 docx 測過，真正由 Word 產出的檔案可能有我沒想到的結構。
 - [ ] 讓 agent 用 `GetOutline` → `ReadSection` 讀完文件後回答內容問題，記錄正確率。
+
+## PPT 真實文件驗證
+
+- [x] 用使用者提供的一份真實 pptx（40 張，Google 簡報匯出的範本，含表格、群組形狀、超連結、一張有 5888 個形狀的投影片）驗證：結構與文字輸出合理，整份解析約 2 秒。
+- [ ] 這份檔案沒有圖表、備註、SmartArt、隱藏投影片，這幾項只用程式產生的 pptx 測過；請再給一份有圖表與備註的簡報（PowerPoint 存出的）。
+- [ ] 讓 agent 用 `GetOutline` → `ReadSlides` 讀完簡報後回答內容問題，記錄正確率。
 
 ## PDF 驗證（決定要不要追加 Python）
 

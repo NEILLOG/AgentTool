@@ -57,7 +57,7 @@ Excel `Save` 覆寫原檔不受 `AllowOverwrite` 控制，但一律備份（見 
 | `SHEET_NOT_FOUND` | 附上實際存在的工作表名稱 |
 | `SECTION_NOT_FOUND` | 附上實際存在的 sectionId 與標題（用 get_outline 查看） |
 | `INVALID_RANGE` | 說明正確格式，例如 A1:C10 |
-| `INVALID_VALUE` | 儲存格值只能是數字、字串、布林、日期（ISO 字串）或 null；字串最長 32767 字元 |
+| `INVALID_VALUE` | 儲存格值只能是數字、字串、布林、日期（ISO 字串）或 null；字串最長 32767 字元；讀取的 offset、maxChars、投影片範圍超出範圍 |
 | `UNSAFE_OPERATION` | 這個操作會讓檔案損壞（ClosedXML 的限制），已自動復原，活頁簿沒有變更；請改用其他方式或先調整表格 / 資料驗證 |
 
 PDF 頁面無法 OCR 不算錯誤，以頁面標記 `OcrUnavailable` 表示（見 03）。

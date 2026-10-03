@@ -30,3 +30,14 @@ public sealed record ReadResult(
     int? NextOffset,
     string? SectionId,
     IReadOnlyList<string> Notes);
+
+/// <summary>PPT 讀取選項。演講者備註預設輸出（附在各投影片最後，以引用區塊呈現）。</summary>
+public sealed record PptReadOptions(bool IncludeNotes = true);
+
+/// <param name="Number">投影片編號（從 1 開始，依簡報順序）。</param>
+/// <param name="Title">標題預留位置的文字；沒有標題為空字串。</param>
+/// <param name="Chars">這張投影片轉成 Markdown 後的字元數（含備註）。</param>
+public sealed record SlideOutline(int Number, string Title, int Chars, bool Hidden, bool HasNotes, int Pictures, int Tables, int Charts);
+
+/// <param name="Notes">轉換時略過或簡化的內容說明（圖片數量、SmartArt 等）。</param>
+public sealed record PresentationOutline(string Path, int SlideCount, int TotalChars, IReadOnlyList<SlideOutline> Slides, IReadOnlyList<string> Notes);
