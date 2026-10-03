@@ -62,16 +62,39 @@ ClosedXML 載入既有檔案後再存檔，會遺失或損壞它不支援的內�
 - 修改類操作都回傳操作後的工作表清單，讓 agent 不必再查一次。
 - `GetSheetInfo` 的已使用範圍以「有內容」為準，空的合併儲存格不算。
 
+## 範圍操作的行為（`RangeOperations`）
+
+**ReadRange**
+- 結果**限縮在工作表有內容的區域內**：起點維持你要求的位置，終點縮到最後有內容的列 / 欄，`Range` 回傳實際範圍。整欄（`A:A`）、整列（`1:1`）、整張表（`A1:XFD1048576`）因此都安全。要求的區域完全在有內容的區域之外時回傳空陣列。
+- 超過 `MaxCellsPerRead` 以**整列**為單位截斷，至少回傳一整列（一列比上限寬時仍回整列），`NextRange` 是接著要讀的範圍（一律是儲存格範圍格式）。
+- 只走有內容的格子（`CellsUsed`），讀取不會把空格子建出來，也不會讓工作表變成「有變更」。
+- `UseFormattedText` 一律用 Invariant culture 格式化。ClosedXML 的 `GetFormattedString()` 不帶參數時會隨使用者的地區設定變化（實測法文變成 `1 234,50`、阿拉伯文用阿拉伯數字），所以固定傳 `CultureInfo.InvariantCulture`。
+- 公式算不出來（語法錯誤、循環參照、ClosedXML 解析不了的語法）時，該格回傳檔案中的快取值並在 `CalculationWarnings` 列出（最多 20 筆，其餘合併成一則摘要），不讓整個讀取失敗。公式算出 `#DIV/0!`、`#NAME?` 等錯誤值不算警告，直接當值回傳。
+- ClosedXML 會把範圍擴張到涵蓋跨出範圍的合併儲存格，所以讀取時要過濾掉超出要求的格子。
+
+**WriteRange / AppendRows**
+- `WriteRange` 的位置可以是單一儲存格（左上角起點），或與資料大小**完全相同**的範圍；整欄整列不可當寫入目標。資料列可長短不一，缺的格子不動；整列是 `null` 就略過；格子是 `null` 代表清空內容（保留格式）。
+- **全有或全無**：先把所有值轉換並驗證，全部通過才動工作表。任何一格有問題（型別不支援、NaN、字串太長、公式語法錯誤）都不寫入，錯誤訊息開頭是出問題的儲存格位址。
+- **公式語法驗證**（`FormulaValidator`）：在暫存活頁簿裡解析，只攔語法錯誤（`ExpressionParseException`），回 `INVALID_VALUE` 並附公式與位置。用 54 個常見合法語法（陣列常數、結構化參照、`LET`、`XLOOKUP`、動態陣列 `A1#`、跨表 `Sheet1:Sheet3!A1` 等）驗證沒有誤判。不攔：未知函式（得到 `#NAME?`）、不存在的工作表（`#REF!`）、循環參照。
+- 寫入後試算剛寫的公式，算出錯誤值或無法計算（含循環參照）時在 `RangeChangeResult.Warnings` 提醒，但資料照常寫入。
+- 單次寫入上限 `MaxCellsPerWrite`（預設 20000），超過回 `INVALID_VALUE` 並建議分批；超出工作表邊界（XFD1048576）回 `INVALID_RANGE`。
+- `AppendRows` 從有內容區域的下一列、第一個有內容的欄開始；可用 `startColumn` 指定。空工作表從 A1 開始。
+
+**ClearRange**
+- 預設只清內容與公式，保留格式；可選只清格式或全部清除。範圍會縮到「含格式」的使用區域，所以清整張表也很快。
+
 ## 資料表示
 
 ```csharp
 public sealed record RangeData(
     string Sheet,
-    string Range,               // 實際回傳的範圍
-    object?[][] Values,         // 數字/字串/布林/null，日期轉 ISO 字串
+    string Range,               // 實際回傳的範圍（已限縮在有內容的區域內）
+    string? UsedRange,          // 工作表目前有內容的範圍
+    object?[][] Values,         // 數字/字串/布林/null，日期轉 ISO 字串，公式錯誤是 "#DIV/0!" 等文字
     string?[][]? Formulas,      // 只有 IncludeFormulas 時才回
     bool Truncated,
-    string? NextRange);         // 被截斷時，下一段要讀的範圍
+    string? NextRange,          // 被截斷時，下一段要讀的範圍
+    IReadOnlyList<string> CalculationWarnings);
 ```
 
 - 讀取回傳緊湊的 2D 陣列；可選擇附公式（`IncludeFormulas`）、顯示文字（`UseFormattedText`）。
