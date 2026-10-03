@@ -42,7 +42,7 @@
 | 元件 | Mac 上可開發與測試 | 備註 |
 | --- | --- | --- |
 | OfficeTools.Common | 可 | |
-| ExcelTools.Core（ClosedXML） | 可 | 欄寬自動調整依賴字型，Mac 與 Windows 結果可能略有差異 |
+| ExcelTools.Core（ClosedXML） | 可 | 欄寬自動調整不依賴作業系統字型（確定性估算，Mac 與 Windows 一致） |
 | DocumentReader.Core：Word / PPT | 可 | Open XML SDK 跨平台 |
 | DocumentReader.Core：PDF 文字抽取（PdfPig） | 可 | 純 managed |
 | PDF 頁面轉圖片（PDFium 包裝） | 大致可 | 需確認套件有 osx-arm64 原生檔（05 第 7 步先做 spike） |

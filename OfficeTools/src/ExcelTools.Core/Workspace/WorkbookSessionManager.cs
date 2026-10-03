@@ -129,15 +129,22 @@ public sealed class WorkbookSessionManager : IDisposable
             }
 
             session.LastAccess = _time.GetUtcNow();
+            var mayHaveChanged = mutates;
             try
             {
                 return action(session);
             }
+            catch (OfficeToolException)
+            {
+                // 約定：OfficeToolException（參數驗證、拒絕操作）一律在動到活頁簿之前拋出，被拒絕的操作不該留下「有未存變更」的假象
+                mayHaveChanged = false;
+                throw;
+            }
             finally
             {
-                if (mutates)
+                if (mayHaveChanged)
                 {
-                    session.IsDirty = true; // 操作中途失敗時活頁簿可能已部分變更，一律視為有變更
+                    session.IsDirty = true; // 成功，或非預期的例外（中途失敗時活頁簿可能已部分變更）：視為有變更
                 }
 
                 session.LastAccess = _time.GetUtcNow(); // 閒置從操作結束算起，長時間的操作不算閒置

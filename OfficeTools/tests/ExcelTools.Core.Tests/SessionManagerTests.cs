@@ -291,3 +291,55 @@ public sealed class SessionManagerTests : IDisposable
         while (Interlocked.CompareExchange(ref location, value, current) != current);
     }
 }
+
+public sealed class DirtyTrackingTests : IDisposable
+{
+    private readonly ExcelEnv _env = new();
+
+    public void Dispose() => _env.Dispose();
+
+    private string Open() => _env.Files.Open(_env.MakeWorkbook("book.xlsx")).WorkbookId;
+
+    private bool IsDirty() => _env.Files.ListOpen().Single().IsDirty;
+
+    [Fact]
+    public void A_refused_operation_does_not_mark_the_workbook_as_changed()
+    {
+        var id = Open();
+
+        Assert.Throws<OfficeToolException>(() => _env.Ranges.WriteRange(id, "Data", "A1", [[double.NaN]]));
+        Assert.Throws<OfficeToolException>(() => _env.Sheets.Rename(id, "Data", "a/b"));
+        Assert.Throws<OfficeToolException>(() => _env.Ranges.WriteRange(id, "Nope", "A1", [[1]]));
+        Assert.Throws<OfficeToolException>(() => _env.Formats.FormatRange(id, "Data", "A1", new Models.FormatSpec { FontColor = "nope" }));
+        Assert.Throws<OfficeToolException>(() => _env.Formats.FreezePanes(id, "Data", -1, 0));
+
+        Assert.False(IsDirty());
+    }
+
+    [Fact]
+    public void A_successful_operation_marks_the_workbook_as_changed()
+    {
+        var id = Open();
+        _env.Ranges.WriteRange(id, "Data", "A1", [[1]]);
+        Assert.True(IsDirty());
+    }
+
+    [Fact]
+    public void An_unexpected_exception_during_a_mutation_still_marks_the_workbook_as_changed()
+    {
+        var id = Open();
+
+        Assert.Throws<InvalidOperationException>(() => _env.Sessions.Use(id, true, _ => throw new InvalidOperationException("boom")));
+
+        Assert.True(IsDirty()); // 中途失敗時活頁簿可能已部分變更
+    }
+
+    [Fact]
+    public void A_refused_operation_after_a_successful_one_keeps_the_changed_flag()
+    {
+        var id = Open();
+        _env.Ranges.WriteRange(id, "Data", "A1", [[1]]);
+        Assert.Throws<OfficeToolException>(() => _env.Ranges.WriteRange(id, "Data", "A1", [[double.NaN]]));
+        Assert.True(IsDirty());
+    }
+}

@@ -25,7 +25,7 @@ internal sealed class ExcelEnv : IDisposable
 {
     private readonly TempDirectory _tmp = new();
 
-    public ExcelEnv(bool allowOverwrite = false, int maxUncompressedMb = 500, TimeSpan? idleTimeout = null, int maxCellsPerRead = 2000, int maxCellsPerWrite = 20_000)
+    public ExcelEnv(bool allowOverwrite = false, int maxUncompressedMb = 500, TimeSpan? idleTimeout = null, int maxCellsPerRead = 2000, int maxCellsPerWrite = 20_000, int maxCellsPerFormat = 50_000)
     {
         Root = _tmp.Combine("root");
         Directory.CreateDirectory(Root);
@@ -37,11 +37,12 @@ internal sealed class ExcelEnv : IDisposable
             MaxUncompressedMb = maxUncompressedMb,
         };
         Guard = new PathGuard(Options, Time);
-        var excelOptions = new ExcelToolsOptions { IdleTimeout = idleTimeout ?? TimeSpan.FromMinutes(30), MaxCellsPerRead = maxCellsPerRead, MaxCellsPerWrite = maxCellsPerWrite };
+        var excelOptions = new ExcelToolsOptions { IdleTimeout = idleTimeout ?? TimeSpan.FromMinutes(30), MaxCellsPerRead = maxCellsPerRead, MaxCellsPerWrite = maxCellsPerWrite, MaxCellsPerFormat = maxCellsPerFormat };
         Sessions = new WorkbookSessionManager(Guard, excelOptions, Time);
         Files = new FileOperations(Guard, Options, Sessions);
         Sheets = new SheetOperations(Sessions);
         Ranges = new RangeOperations(Sessions, excelOptions);
+        Formats = new FormatOperations(Sessions, excelOptions);
     }
 
     public string Root { get; }
@@ -59,6 +60,8 @@ internal sealed class ExcelEnv : IDisposable
     public SheetOperations Sheets { get; }
 
     public RangeOperations Ranges { get; }
+
+    public FormatOperations Formats { get; }
 
     public string Path(string relative) => System.IO.Path.Combine(Root, relative);
 
